@@ -42,8 +42,8 @@ float temperature;
 float humidity;
 float pressure;
 float gasResistance;
-float iaq;
-float calibration_status;
+int iaq;
+int calibration_status;
 String calibration_text;
 
 AsyncWebServer server(80);
@@ -64,7 +64,7 @@ void getBME680Readings(){
     if (calibration_status == 3) {
       calibration_text = "Done";
     } else {
-      calibration_text = "In Progress...  " + calibration_status + "/3";
+      calibration_text = "In Progress...  " + str(calibration_status) + "/3";
   } else {
     Serial.println(F("Failed to begin reading :("));
     checkIaqSensorStatus();
@@ -246,7 +246,7 @@ void loop() {
     Serial.printf("Temperature = %.2f ºC \n", temperature);
     Serial.printf("Humidity = %.2f % \n", humidity);
     Serial.printf("Pressure = %.2f hPa \n", pressure);
-    Serial.printf("Index of Air Quality = %.0f \n", iaq);
+    Serial.printf("Index of Air Quality = % \n", iaq);
     Serial.printf("Calibration status = % \n", calibration_status);
     Serial.println();
 
