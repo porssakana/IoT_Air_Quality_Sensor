@@ -65,6 +65,7 @@ void getBME680Readings(){
       calibration_text = "Done";
     } else {
       calibration_text = "In Progress...  " + String(calibration_status) + "/3";
+    }
   } else {
     Serial.println(F("Failed to begin reading :("));
     checkIaqSensorStatus();
