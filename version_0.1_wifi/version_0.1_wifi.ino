@@ -249,7 +249,9 @@ void loop() {
     Serial.printf("Pressure = %.2f hPa \n", pressure);
     Serial.printf("Index of Air Quality = %d \n", iaq);
     Serial.printf("Calibration status = %d \n", calibration_status);
-    Serial.printf("Calibration text = " + calibration_text + "\n");
+    Serial.print("Calibration text = ");
+    Serial.print(calibration_text);
+    Serial.println();
     Serial.println();
 
     // Send Events to the Web Server with the Sensor Readings
