@@ -45,20 +45,16 @@ unsigned long timerDelay = 30000;  // send readings timer
 
 void getBME680Readings(){
   // Tell BME680 to begin measurement.
-  unsigned long endTime = bme.beginReading();
-  if (endTime == 0) {
+  if (bme.run()) { //if new data is available
+    temperature = bme.temperature;
+    pressure = bme.pressure / 100.0;
+    humidity = bme.humidity;
+    gasResistance = bme.gas_resistance / 1000.0;
+    iaq = bme.iaq;
+  } else {
     Serial.println(F("Failed to begin reading :("));
-    return;
+    checkIaqSensorStatus();
   }
-  if (!bme.endReading()) {
-    Serial.println(F("Failed to complete reading :("));
-    return;
-  }
-  temperature = bme.temperature;
-  pressure = bme.pressure / 100.0;
-  humidity = bme.humidity;
-  gasResistance = bme.gas_resistance / 1000.0;
-  iaq = bme.iaq;
 }
 
 String processor(const String& var){
@@ -75,6 +71,9 @@ String processor(const String& var){
   }
  else if(var == "GAS"){
     return String(gasResistance);
+  }
+ else if(var == "IAQ"){
+    return String(iaq);
   }
 }
 
