@@ -35,6 +35,9 @@ Bsec bme; // I2C
 //Adafruit_BME680 bme(BME_CS); // hardware SPI
 //Adafruit_BME680 bme(BME_CS, BME_MOSI, BME_MISO, BME_SCK);
 
+// Serial output string
+String output;
+
 float temperature;
 float humidity;
 float pressure;
