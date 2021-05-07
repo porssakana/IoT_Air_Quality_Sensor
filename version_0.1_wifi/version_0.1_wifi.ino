@@ -12,7 +12,7 @@
 #include <Wire.h>
 #include <SPI.h>
 #include <Adafruit_Sensor.h>
-#include "Adafruit_BME680.h"
+#include "bsec.h"
 #include <ESP8266WiFi.h>
 #include "ESPAsyncWebServer.h"
 
@@ -26,7 +26,8 @@ const char* password = "";
 #define BME_MOSI 13
 #define BME_CS 15*/
 
-Adafruit_BME680 bme; // I2C
+//BME object
+Bsec bme; // I2C
 //Adafruit_BME680 bme(BME_CS); // hardware SPI
 //Adafruit_BME680 bme(BME_CS, BME_MOSI, BME_MISO, BME_SCK);
 
@@ -34,6 +35,7 @@ float temperature;
 float humidity;
 float pressure;
 float gasResistance;
+//float iaq; //indoor air quality
 
 AsyncWebServer server(80);
 AsyncEventSource events("/events");
@@ -56,6 +58,7 @@ void getBME680Readings(){
   pressure = bme.pressure / 100.0;
   humidity = bme.humidity;
   gasResistance = bme.gas_resistance / 1000.0;
+  iaq = bme.iaq;
 }
 
 String processor(const String& var){
@@ -115,6 +118,9 @@ const char index_html[] PROGMEM = R"rawliteral(
       <div class="card gas">
         <h4><i class="fas fa-wind"></i> GAS</h4><p><span class="reading"><span id="gas">%GAS%</span> K&ohm;</span></p>
       </div>
+      <div class="card iaq">
+        <h4><i class="fas fa-broom"></i> IAQ</h4><p><span class="reading"><span id="iaq">%IAQ%</span> units;</span></p>
+      </div>
     </div>
   </div>
 <script>
@@ -153,6 +159,11 @@ if (!!window.EventSource) {
   console.log("gas", e.data);
   document.getElementById("gas").innerHTML = e.data;
  }, false);
+ 
+ source.addEventListener('iaq', function(e) {
+  console.log("iaq", e.data);
+  document.getElementById("iaq").innerHTML = e.data;
+ }, false);
 }
 </script>
 </body>
@@ -174,17 +185,29 @@ void setup() {
   Serial.println(WiFi.localIP());
   Serial.println();
 
-  // Init BME680 sensor
-  if (!bme.begin(0x76)) {
-    Serial.println(F("Could not find a valid BME680 sensor, check wiring!"));
-    while (1);
-  }
-  // Set up oversampling and filter initialization
-  bme.setTemperatureOversampling(BME680_OS_8X);
-  bme.setHumidityOversampling(BME680_OS_2X);
-  bme.setPressureOversampling(BME680_OS_4X);
-  bme.setIIRFilterSize(BME680_FILTER_SIZE_3);
-  bme.setGasHeater(320, 150); // 320*C for 150 ms
+  Wire.begin();
+  
+  
+  bme.begin(BME680_I2C_ADDR_PRIMARY, Wire);
+  output = "\nBSEC library version " + String(bme.version.major) + "." + String(bme.version.minor) + "." + String(bme.version.major_bugfix) + "." + String(bme.version.minor_bugfix);
+  Serial.println(output);
+  checkIaqSensorStatus();
+
+  bsec_virtual_sensor_t sensorList[10] = {
+    BSEC_OUTPUT_RAW_TEMPERATURE,
+    BSEC_OUTPUT_RAW_PRESSURE,
+    BSEC_OUTPUT_RAW_HUMIDITY,
+    BSEC_OUTPUT_RAW_GAS,
+    BSEC_OUTPUT_IAQ,
+    BSEC_OUTPUT_STATIC_IAQ,
+    BSEC_OUTPUT_CO2_EQUIVALENT,
+    BSEC_OUTPUT_BREATH_VOC_EQUIVALENT,
+    BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_TEMPERATURE,
+    BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_HUMIDITY,
+  };
+  
+  bme.updateSubscription(sensorList, 10, BSEC_SAMPLE_RATE_LP);
+  checkIaqSensorStatus();
 
   // Handle Web Server
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
@@ -211,6 +234,7 @@ void loop() {
     Serial.printf("Humidity = %.2f % \n", humidity);
     Serial.printf("Pressure = %.2f hPa \n", pressure);
     Serial.printf("Gas Resistance = %.2f KOhm \n", gasResistance);
+    Serial.printf("Index of Air Quality = %.0f \n", iaq);
     Serial.println();
 
     // Send Events to the Web Server with the Sensor Readings
@@ -219,7 +243,43 @@ void loop() {
     events.send(String(humidity).c_str(),"humidity",millis());
     events.send(String(pressure).c_str(),"pressure",millis());
     events.send(String(gasResistance).c_str(),"gas",millis());
+    events.send(String(iaq).c_str(),"iaq",millis());
     
     lastTime = millis();
   }
+}
+
+// Helper function definitions
+void checkIaqSensorStatus(void) {
+  if (bme.status != BSEC_OK) {
+    if (bme.status < BSEC_OK) {
+      output = "BSEC error code : " + String(bme.status);
+      Serial.println(output);
+      for (;;)
+        errLeds(); /* Halt in case of failure */
+    } else {
+      output = "BSEC warning code : " + String(bme.status);
+      Serial.println(output);
+    }
+  }
+
+  if (bme.bme680Status != BME680_OK) {
+    if (bme.bme680Status < BME680_OK) {
+      output = "BME680 error code : " + String(bme.bme680Status);
+      Serial.println(output);
+      for (;;)
+        errLeds(); /* Halt in case of failure */
+    } else {
+      output = "BME680 warning code : " + String(bme.bme680Status);
+      Serial.println(output);
+    }
+  }
+}
+
+void errLeds(void) {
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(100);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(100);
 }
