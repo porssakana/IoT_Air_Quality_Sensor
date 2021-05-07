@@ -35,7 +35,7 @@ float temperature;
 float humidity;
 float pressure;
 float gasResistance;
-//float iaq; //indoor air quality
+float iaq; //indoor air quality
 
 AsyncWebServer server(80);
 AsyncEventSource events("/events");
