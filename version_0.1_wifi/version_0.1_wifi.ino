@@ -16,6 +16,10 @@
 #include <ESP8266WiFi.h>
 #include "ESPAsyncWebServer.h"
 
+// Helper functions declarations
+void checkIaqSensorStatus(void);
+void errLeds(void);
+
 // Replace with your network credentials
 const char* ssid = "";
 const char* password = "";
@@ -49,7 +53,7 @@ void getBME680Readings(){
     temperature = bme.temperature;
     pressure = bme.pressure / 100.0;
     humidity = bme.humidity;
-    gasResistance = bme.gas_resistance / 1000.0;
+    gasResistance = bme.gasResistance / 1000.0;
     iaq = bme.iaq;
   } else {
     Serial.println(F("Failed to begin reading :("));
@@ -186,7 +190,7 @@ void setup() {
 
   Wire.begin();
   
-  
+ 
   bme.begin(BME680_I2C_ADDR_PRIMARY, Wire);
   output = "\nBSEC library version " + String(bme.version.major) + "." + String(bme.version.minor) + "." + String(bme.version.major_bugfix) + "." + String(bme.version.minor_bugfix);
   Serial.println(output);
