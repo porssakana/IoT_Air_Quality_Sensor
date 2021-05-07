@@ -42,7 +42,9 @@ float temperature;
 float humidity;
 float pressure;
 float gasResistance;
-float iaq; //indoor air quality
+float iaq;
+float calibration_status;
+String calibration_text;
 
 AsyncWebServer server(80);
 AsyncEventSource events("/events");
@@ -56,8 +58,13 @@ void getBME680Readings(){
     temperature = bme.temperature;
     pressure = bme.pressure / 100.0;
     humidity = bme.humidity;
-    gasResistance = bme.gasResistance / 1000.0;
     iaq = bme.iaq;
+    calibration_status = bme.iaqAccuracy;
+    
+    if (calibration_status == 3) {
+      calibration_text = "Done";
+    } else {
+      calibration_text = "In Progress...  " + calibration_status + "/3";
   } else {
     Serial.println(F("Failed to begin reading :("));
     checkIaqSensorStatus();
@@ -76,11 +83,11 @@ String processor(const String& var){
   else if(var == "PRESSURE"){
     return String(pressure);
   }
- else if(var == "GAS"){
-    return String(gasResistance);
-  }
  else if(var == "IAQ"){
     return String(iaq);
+  }
+ else if(var == "CALIBRATION"){
+    return String(calibration_text);
   }
 }
 
@@ -121,11 +128,11 @@ const char index_html[] PROGMEM = R"rawliteral(
       <div class="card pressure">
         <h4><i class="fas fa-angle-double-down"></i> PRESSURE</h4><p><span class="reading"><span id="pres">%PRESSURE%</span> hPa</span></p>
       </div>
-      <div class="card gas">
-        <h4><i class="fas fa-wind"></i> GAS</h4><p><span class="reading"><span id="gas">%GAS%</span> K&ohm;</span></p>
-      </div>
       <div class="card iaq">
-        <h4><i class="fas fa-broom"></i> IAQ</h4><p><span class="reading"><span id="iaq">%IAQ%</span> units;</span></p>
+        <h4><i class="fas fa-broom"></i> IAQ</h4><p><span class="reading"><span id="iaq">%IAQ%</span> </span></p>
+      </div>
+      <div class="card calibration">
+        <h4><i class="fas fa-wrench"></i> CALIBRATION</h4><p><span class="reading"><span id="cal">%CALIBRATION%</span> </span></p>
       </div>
     </div>
   </div>
@@ -160,15 +167,15 @@ if (!!window.EventSource) {
   console.log("pressure", e.data);
   document.getElementById("pres").innerHTML = e.data;
  }, false);
- 
- source.addEventListener('gas', function(e) {
-  console.log("gas", e.data);
-  document.getElementById("gas").innerHTML = e.data;
- }, false);
- 
+  
  source.addEventListener('iaq', function(e) {
   console.log("iaq", e.data);
   document.getElementById("iaq").innerHTML = e.data;
+ }, false);
+ 
+ source.addEventListener('calibration', function(e) {
+  console.log("calibration", e.data);
+  document.getElementById("cal").innerHTML = e.data;
  }, false);
 }
 </script>
@@ -239,8 +246,8 @@ void loop() {
     Serial.printf("Temperature = %.2f ºC \n", temperature);
     Serial.printf("Humidity = %.2f % \n", humidity);
     Serial.printf("Pressure = %.2f hPa \n", pressure);
-    Serial.printf("Gas Resistance = %.2f KOhm \n", gasResistance);
     Serial.printf("Index of Air Quality = %.0f \n", iaq);
+    Serial.printf("Calibration status = % \n", calibration_status);
     Serial.println();
 
     // Send Events to the Web Server with the Sensor Readings
@@ -248,8 +255,8 @@ void loop() {
     events.send(String(temperature).c_str(),"temperature",millis());
     events.send(String(humidity).c_str(),"humidity",millis());
     events.send(String(pressure).c_str(),"pressure",millis());
-    events.send(String(gasResistance).c_str(),"gas",millis());
     events.send(String(iaq).c_str(),"iaq",millis());
+    events.send(String(calibration_text).c_str(),"calibration",millis());
     
     lastTime = millis();
   }
