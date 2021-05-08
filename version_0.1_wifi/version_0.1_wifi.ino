@@ -51,7 +51,7 @@ AsyncWebServer server(80);
 AsyncEventSource events("/events");
 
 unsigned long lastTime = 0;  
-unsigned long timerDelay = 30000;  // send readings timer
+unsigned long timerDelay = 1000;  // send readings timer
 
 void getBME680Readings(){
   // Tell BME680 to begin measurement.
