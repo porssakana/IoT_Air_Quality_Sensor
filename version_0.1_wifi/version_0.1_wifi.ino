@@ -15,14 +15,15 @@
 #include "bsec.h"
 #include <ESP8266WiFi.h>
 #include "ESPAsyncWebServer.h"
+#include "credentials.h"
 
 // Helper functions declarations
 void checkIaqSensorStatus(void);
 void errLeds(void);
 
 // Replace with your network credentials
-const char* ssid = "";
-const char* password = "";
+const char ssid[] = WIFI_SSID;
+const char password[] = WIFI_PASSWORD;
 
 //Uncomment if using SPI
 /*#define BME_SCK 14
