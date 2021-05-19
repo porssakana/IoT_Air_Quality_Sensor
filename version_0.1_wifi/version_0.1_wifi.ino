@@ -301,3 +301,16 @@ void errLeds(void) {
   digitalWrite(LED_BUILTIN, LOW);
   delay(100);
 }
+
+// LED functionalities start here
+// waiting for implementation
+int LED = D0;
+
+// blinking every 0.5 seconds
+void ledBlink() {
+  pinMode(LED, OUTPUT);
+  digitalWrite(LED, LOW);
+  delay(500);
+  digitalWrite(LED, HIGH);
+  delay(500);
+}
