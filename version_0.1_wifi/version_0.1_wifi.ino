@@ -143,46 +143,10 @@ if (!!window.EventSource) {
 </body>
 </html>)rawliteral";
 
-
-// Helper function definitions
-void checkIaqSensorStatus(void) {
-  if (bme.status == BSEC_OK) {
-    for (;;) {
-      ledBlink();
-    }
-  }
-  
-  if (bme.status != BSEC_OK) {
-    if (bme.status < BSEC_OK) {
-      output = "BSEC error code : " + String(bme.status);
-      Serial.println(output);
-      for (;;)
-        errLeds(); /* Halt in case of failure */
-        ledBlinkRapid();
-    } else {
-      output = "BSEC warning code : " + String(bme.status);
-      Serial.println(output);
-    }
-  }
-
-  if (bme.bme680Status != BME680_OK) {
-    if (bme.bme680Status < BME680_OK) {
-      output = "BME680 error code : " + String(bme.bme680Status);
-      Serial.println(output);
-      for (;;)
-        errLeds(); /* Halt in case of failure */
-        ledBlinkRapid();
-    } else {
-      output = "BME680 warning code : " + String(bme.bme680Status);
-      Serial.println(output);
-    }
-  }
-}
-
-
 // ==========| Setup | ==========
 void setup() {
   Serial.begin(115200);
+  Serial.println("Starting setup");
   
   // pin setup
   pinMode(LED_PIN, OUTPUT);
@@ -275,7 +239,6 @@ void UpdateLedFrequency(int var){
   ledDelay = map(var, 0, 500, 1, 5);
 }
 
-
 // ==========| Main Data Update Function | ==========
 void getBME680Readings(){
   // Tell BME680 to begin measurement.
@@ -318,6 +281,40 @@ String processor(const String& var){
   }
 }
 
+// Helper function definitions
+void checkIaqSensorStatus(void) {
+  if (bme.status == BSEC_OK) {
+    for (;;) {
+      ledBlink();
+    }
+  }
+  
+  if (bme.status != BSEC_OK) {
+    if (bme.status < BSEC_OK) {
+      output = "BSEC error code : " + String(bme.status);
+      Serial.println(output);
+      for (;;)
+        errLeds(); /* Halt in case of failure */
+        ledBlinkRapid();
+    } else {
+      output = "BSEC warning code : " + String(bme.status);
+      Serial.println(output);
+    }
+  }
+
+  if (bme.bme680Status != BME680_OK) {
+    if (bme.bme680Status < BME680_OK) {
+      output = "BME680 error code : " + String(bme.bme680Status);
+      Serial.println(output);
+      for (;;)
+        errLeds(); /* Halt in case of failure */
+        ledBlinkRapid();
+    } else {
+      output = "BME680 warning code : " + String(bme.bme680Status);
+      Serial.println(output);
+    }
+  }
+}
 
 
 
