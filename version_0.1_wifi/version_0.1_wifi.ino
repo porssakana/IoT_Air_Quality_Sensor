@@ -330,7 +330,7 @@ void errLeds(void) {
 }
 
 // this is called inside getBME680Readings
-void UpdateLedFrequency(var){
+void UpdateLedFrequency(int var){
   ledDelay = map(var, 0, 500, 1, 5);
 }
 
