@@ -346,8 +346,9 @@ void loop() {
   }
   
   //flashes the LED based on the sensor data
-  if ((millis() - lastTime_LED) > ledDelay) {
+  if ((millis() - lastTime_LED) > ledDelay * 1000) {
     digitalWrite(LED_PIN, HIGH);
+    lastTime_LED = millis();
   } else {
     digitalWrite(LED_PIN, LOW);
   }
