@@ -269,12 +269,19 @@ void loop() {
 
 // Helper function definitions
 void checkIaqSensorStatus(void) {
+  if (bme.status == BSEC_OK) {
+    for (;;) {
+      ledBlink();
+    }
+  }
+  
   if (bme.status != BSEC_OK) {
     if (bme.status < BSEC_OK) {
       output = "BSEC error code : " + String(bme.status);
       Serial.println(output);
       for (;;)
         errLeds(); /* Halt in case of failure */
+        ledBlinkRapid();
     } else {
       output = "BSEC warning code : " + String(bme.status);
       Serial.println(output);
@@ -287,6 +294,7 @@ void checkIaqSensorStatus(void) {
       Serial.println(output);
       for (;;)
         errLeds(); /* Halt in case of failure */
+        ledBlinkRapid();
     } else {
       output = "BME680 warning code : " + String(bme.bme680Status);
       Serial.println(output);
@@ -306,11 +314,20 @@ void errLeds(void) {
 // waiting for implementation
 int LED = D0;
 
-// blinking every 0.5 seconds
-void ledBlink() {
+// blinking slowly
+void ledBlink(void) {
   pinMode(LED, OUTPUT);
   digitalWrite(LED, LOW);
-  delay(500);
+  delay(2000);
   digitalWrite(LED, HIGH);
-  delay(500);
+  delay(2000);
+}
+
+// blinking rapidly
+void ledBlinkRapid(void) {
+  pinMode(LED, OUTPUT);
+  digitalWrite(LED, LOW);
+  delay(100);
+  digitalWrite(LED, HIGH);
+  delay(100);
 }
