@@ -185,6 +185,76 @@ if (!!window.EventSource) {
 </body>
 </html>)rawliteral";
 
+// ======================================================================
+
+// Helper function definitions
+void checkIaqSensorStatus(void) {
+  if (bme.status == BSEC_OK) {
+    for (;;) {
+      ledBlink();
+    }
+  }
+  
+  if (bme.status != BSEC_OK) {
+    if (bme.status < BSEC_OK) {
+      output = "BSEC error code : " + String(bme.status);
+      Serial.println(output);
+      for (;;)
+        errLeds(); /* Halt in case of failure */
+        ledBlinkRapid();
+    } else {
+      output = "BSEC warning code : " + String(bme.status);
+      Serial.println(output);
+    }
+  }
+
+  if (bme.bme680Status != BME680_OK) {
+    if (bme.bme680Status < BME680_OK) {
+      output = "BME680 error code : " + String(bme.bme680Status);
+      Serial.println(output);
+      for (;;)
+        errLeds(); /* Halt in case of failure */
+        ledBlinkRapid();
+    } else {
+      output = "BME680 warning code : " + String(bme.bme680Status);
+      Serial.println(output);
+    }
+  }
+}
+
+void errLeds(void) {
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(100);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(100);
+}
+
+// this is called inside getBME680Readings
+void UpdateLedFrequency(int var){
+  ledDelay = map(var, 0, 500, 1, 5);
+}
+
+// blinking slowly
+void ledBlink(void) {
+  pinMode(LED, OUTPUT);
+  digitalWrite(LED, LOW);
+  delay(2000);
+  digitalWrite(LED, HIGH);
+  delay(2000);
+}
+
+// blinking rapidly
+void ledBlinkRapid(void) {
+  pinMode(LED, OUTPUT);
+  digitalWrite(LED, LOW);
+  delay(100);
+  digitalWrite(LED, HIGH);
+  delay(100);
+}
+
+// ======================================================================
+
 // ==========| Setup | ==========
 void setup() {
   Serial.begin(115200);
@@ -282,72 +352,4 @@ void loop() {
   } else {
     digitalWrite(LED_PIN, LOW);
   }
-}
-
-
-
-// Helper function definitions
-void checkIaqSensorStatus(void) {
-  if (bme.status == BSEC_OK) {
-    for (;;) {
-      ledBlink();
-    }
-  }
-  
-  if (bme.status != BSEC_OK) {
-    if (bme.status < BSEC_OK) {
-      output = "BSEC error code : " + String(bme.status);
-      Serial.println(output);
-      for (;;)
-        errLeds(); /* Halt in case of failure */
-        ledBlinkRapid();
-    } else {
-      output = "BSEC warning code : " + String(bme.status);
-      Serial.println(output);
-    }
-  }
-
-  if (bme.bme680Status != BME680_OK) {
-    if (bme.bme680Status < BME680_OK) {
-      output = "BME680 error code : " + String(bme.bme680Status);
-      Serial.println(output);
-      for (;;)
-        errLeds(); /* Halt in case of failure */
-        ledBlinkRapid();
-    } else {
-      output = "BME680 warning code : " + String(bme.bme680Status);
-      Serial.println(output);
-    }
-  }
-}
-
-void errLeds(void) {
-  pinMode(LED_BUILTIN, OUTPUT);
-  digitalWrite(LED_BUILTIN, HIGH);
-  delay(100);
-  digitalWrite(LED_BUILTIN, LOW);
-  delay(100);
-}
-
-// this is called inside getBME680Readings
-void UpdateLedFrequency(int var){
-  ledDelay = map(var, 0, 500, 1, 5);
-}
-
-// blinking slowly
-void ledBlink(void) {
-  pinMode(LED, OUTPUT);
-  digitalWrite(LED, LOW);
-  delay(2000);
-  digitalWrite(LED, HIGH);
-  delay(2000);
-}
-
-// blinking rapidly
-void ledBlinkRapid(void) {
-  pinMode(LED, OUTPUT);
-  digitalWrite(LED, LOW);
-  delay(100);
-  digitalWrite(LED, HIGH);
-  delay(100);
 }
