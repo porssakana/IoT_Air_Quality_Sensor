@@ -52,6 +52,48 @@ unsigned long lastTime_LED = 0;
 unsigned long timerDelay = 1000;  // frequency of reading values from the sensor
 unsigned long ledDelay = 1;
 
+// ==========| Main Data Update Function | ==========
+void getBME680Readings(){
+  // Tell BME680 to begin measurement.
+  if (bme.run()) { //if new data is available
+    temperature = bme.temperature;
+    pressure = bme.pressure / 100.0;
+    humidity = bme.humidity;
+    iaq = bme.iaq;
+    calibration_status = bme.iaqAccuracy;
+    UpdateLedFrequency(iaq);
+    
+    if (calibration_status == 3) {
+      calibration_text = "Done";
+    } else {
+      calibration_text = "In Progress...  " + String(calibration_status) + "/3";
+    }
+  } else {
+    Serial.println(F("Failed to begin reading :("));
+    checkIaqSensorStatus();
+  }
+}
+
+String processor(const String& var){
+  getBME680Readings();
+  //Serial.println(var);
+  if(var == "TEMPERATURE"){
+    return String(temperature);
+  }
+  else if(var == "HUMIDITY"){
+    return String(humidity);
+  }
+  else if(var == "PRESSURE"){
+    return String(pressure);
+  }
+ else if(var == "IAQ"){
+    return String(iaq);
+  }
+ else if(var == "CALIBRATION"){
+    return String(calibration_text);
+  }
+}
+
 // ==========| WEB SERVER HTML AND CSS | ==========
 const char index_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html>
@@ -208,77 +250,40 @@ void setup() {
   server.begin();
 }
 
-void errLeds(void) {
-  pinMode(LED_BUILTIN, OUTPUT);
-  digitalWrite(LED_BUILTIN, HIGH);
-  delay(100);
-  digitalWrite(LED_BUILTIN, LOW);
-  delay(100);
-}
-
-// blinking slowly
-void ledBlink(void) {
-  pinMode(LED_PIN, OUTPUT);
-  digitalWrite(LED_PIN, LOW);
-  delay(2000);
-  digitalWrite(LED_PIN, HIGH);
-  delay(2000);
-}
-
-// blinking rapidly
-void ledBlinkRapid(void) {
-  pinMode(LED_PIN, OUTPUT);
-  digitalWrite(LED_PIN, LOW);
-  delay(100);
-  digitalWrite(LED_PIN, HIGH);
-  delay(100);
-}
-
-
-// this is called inside getBME680Readings
-void UpdateLedFrequency(int var){
-  ledDelay = map(var, 0, 500, 1, 5);
-}
-
-// ==========| Main Data Update Function | ==========
-void getBME680Readings(){
-  // Tell BME680 to begin measurement.
-  if (bme.run()) { //if new data is available
-    temperature = bme.temperature;
-    pressure = bme.pressure / 100.0;
-    humidity = bme.humidity;
-    iaq = bme.iaq;
-    calibration_status = bme.iaqAccuracy;
-    UpdateLedFrequency(iaq);
+// ==========| Main Loop | ==========
+void loop() {
+  
+  //updates values from the sensor and outputs info to the server and console
+  if ((millis() - lastTime_DATA) > timerDelay) {
+    getBME680Readings();
     
-    if (calibration_status == 3) {
-      calibration_text = "Done";
-    } else {
-      calibration_text = "In Progress...  " + String(calibration_status) + "/3";
-    }
-  } else {
-    Serial.println(F("Failed to begin reading :("));
-    checkIaqSensorStatus();
-  }
-}
+    Serial.printf("Temperature = %.2f ºC \n", temperature);
+    Serial.printf("Humidity = %.2f % \n", humidity);
+    Serial.printf("Pressure = %.2f hPa \n", pressure);
+    Serial.printf("Index of Air Quality = %d \n", iaq);
+    Serial.printf("Calibration status = %d \n", calibration_status);
+    Serial.print("Calibration text = ");
+    Serial.print(calibration_text);
+    Serial.println();
+    Serial.println();
 
-String processor(const String& var){
-  getBME680Readings();
-  //Serial.println(var);
-  if(var == "TEMPERATURE"){
-    return String(temperature);
+    // Send Events to the Web Server with the Sensor Readings
+    events.send("ping",NULL,millis());
+    events.send(String(temperature).c_str(),"temperature",millis());
+    events.send(String(humidity).c_str(),"humidity",millis());
+    events.send(String(pressure).c_str(),"pressure",millis());
+    events.send(String(iaq).c_str(),"iaq",millis());
+    events.send(String(calibration_text).c_str(),"calibration",millis());
+    
+    lastTime_DATA = millis();
   }
-  else if(var == "HUMIDITY"){
-    return String(humidity);
-  }
-  else if(var == "PRESSURE"){
-    return String(pressure);
-  }
- else if(var == "IAQ"){
-    return String(iaq);
-  }
- else if(var == "CALIBRATION"){
-    return String(calibration_text);
+  
+  //flashes the LED based on the sensor data
+  if ((millis() - lastTime_LED) > ledDelay * 1000) {
+    digitalWrite(LED_PIN, HIGH);
+    lastTime_LED = millis();
+  } else {
+    digitalWrite(LED_PIN, LOW);
   }
 }
 
@@ -318,41 +323,43 @@ void checkIaqSensorStatus(void) {
 }
 
 
-
-
-// ==========| Main Loop | ==========
-void loop() {
-  
-  //updates values from the sensor and outputs info to the server and console
-  if ((millis() - lastTime_DATA) > timerDelay) {
-    getBME680Readings();
-    
-    Serial.printf("Temperature = %.2f ºC \n", temperature);
-    Serial.printf("Humidity = %.2f % \n", humidity);
-    Serial.printf("Pressure = %.2f hPa \n", pressure);
-    Serial.printf("Index of Air Quality = %d \n", iaq);
-    Serial.printf("Calibration status = %d \n", calibration_status);
-    Serial.print("Calibration text = ");
-    Serial.print(calibration_text);
-    Serial.println();
-    Serial.println();
-
-    // Send Events to the Web Server with the Sensor Readings
-    events.send("ping",NULL,millis());
-    events.send(String(temperature).c_str(),"temperature",millis());
-    events.send(String(humidity).c_str(),"humidity",millis());
-    events.send(String(pressure).c_str(),"pressure",millis());
-    events.send(String(iaq).c_str(),"iaq",millis());
-    events.send(String(calibration_text).c_str(),"calibration",millis());
-    
-    lastTime_DATA = millis();
-  }
-  
-  //flashes the LED based on the sensor data
-  if ((millis() - lastTime_LED) > ledDelay * 1000) {
-    digitalWrite(LED_PIN, HIGH);
-    lastTime_LED = millis();
-  } else {
-    digitalWrite(LED_PIN, LOW);
-  }
+void errLeds(void) {
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(100);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(100);
 }
+
+// blinking slowly
+void ledBlink(void) {
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, LOW);
+  delay(2000);
+  digitalWrite(LED_PIN, HIGH);
+  delay(2000);
+}
+
+// blinking rapidly
+void ledBlinkRapid(void) {
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, LOW);
+  delay(100);
+  digitalWrite(LED_PIN, HIGH);
+  delay(100);
+}
+
+// this is called inside getBME680Readings
+void UpdateLedFrequency(int var){
+  ledDelay = map(var, 0, 500, 1, 5);
+}
+
+
+
+
+
+
+
+
+
+
