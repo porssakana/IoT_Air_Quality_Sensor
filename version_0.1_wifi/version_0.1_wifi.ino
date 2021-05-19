@@ -71,6 +71,28 @@ String processor(const String& var){
   }
 }
 
+// ==========| Main Data Update Function | ==========
+void getBME680Readings(){
+  // Tell BME680 to begin measurement.
+  if (bme.run()) { //if new data is available
+    temperature = bme.temperature;
+    pressure = bme.pressure / 100.0;
+    humidity = bme.humidity;
+    iaq = bme.iaq;
+    calibration_status = bme.iaqAccuracy;
+    UpdateLedFrequency(iaq);
+    
+    if (calibration_status == 3) {
+      calibration_text = "Done";
+    } else {
+      calibration_text = "In Progress...  " + String(calibration_status) + "/3";
+    }
+  } else {
+    Serial.println(F("Failed to begin reading :("));
+    checkIaqSensorStatus();
+  }
+}
+
 // ==========| WEB SERVER HTML AND CSS | ==========
 const char index_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html>
@@ -262,27 +284,7 @@ void loop() {
   }
 }
 
-// update values from the sensor
-void getBME680Readings(){
-  // Tell BME680 to begin measurement.
-  if (bme.run()) { //if new data is available
-    temperature = bme.temperature;
-    pressure = bme.pressure / 100.0;
-    humidity = bme.humidity;
-    iaq = bme.iaq;
-    calibration_status = bme.iaqAccuracy;
-    UpdateLedFrequency(iaq);
-    
-    if (calibration_status == 3) {
-      calibration_text = "Done";
-    } else {
-      calibration_text = "In Progress...  " + String(calibration_status) + "/3";
-    }
-  } else {
-    Serial.println(F("Failed to begin reading :("));
-    checkIaqSensorStatus();
-  }
-}
+
 
 // Helper function definitions
 void checkIaqSensorStatus(void) {
