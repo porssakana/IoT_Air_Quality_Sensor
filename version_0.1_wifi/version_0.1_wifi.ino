@@ -25,53 +25,31 @@ void errLeds(void);
 const char ssid[] = WIFI_SSID;
 const char password[] = WIFI_PASSWORD;
 
-//Uncomment if using SPI
-/*#define BME_SCK 14
-#define BME_MISO 12
-#define BME_MOSI 13
-#define BME_CS 15*/
+// ==========| Pin Declarations | ==========
+const int LED_PIN = 3;
 
-//BME object
-Bsec bme; // I2C
-//Adafruit_BME680 bme(BME_CS); // hardware SPI
-//Adafruit_BME680 bme(BME_CS, BME_MOSI, BME_MISO, BME_SCK);
+// ==========| Objects | ==========
+Bsec bme;
 
-// Serial output string
+// ==========| Sensor Variables | ==========
 String output;
-
+String calibration_text;
 float temperature;
 float humidity;
 float pressure;
 float gasResistance;
 int iaq;
 int calibration_status;
-String calibration_text;
 
+// ==========| Init Web Server | ==========
 AsyncWebServer server(80);
 AsyncEventSource events("/events");
 
-unsigned long lastTime = 0;  
-unsigned long timerDelay = 1000;  // send readings timer
-
-void getBME680Readings(){
-  // Tell BME680 to begin measurement.
-  if (bme.run()) { //if new data is available
-    temperature = bme.temperature;
-    pressure = bme.pressure / 100.0;
-    humidity = bme.humidity;
-    iaq = bme.iaq;
-    calibration_status = bme.iaqAccuracy;
-    
-    if (calibration_status == 3) {
-      calibration_text = "Done";
-    } else {
-      calibration_text = "In Progress...  " + String(calibration_status) + "/3";
-    }
-  } else {
-    Serial.println(F("Failed to begin reading :("));
-    checkIaqSensorStatus();
-  }
-}
+// ==========| Time-based Variables | ==========
+unsigned long lastTime_DATA = 0;
+unsigned long lastTime_LED = 0; 
+unsigned long timerDelay = 1000;  // frequency of reading values from the sensor
+unsigned long ledDelay = 1;
 
 String processor(const String& var){
   getBME680Readings();
@@ -93,6 +71,7 @@ String processor(const String& var){
   }
 }
 
+// ==========| WEB SERVER HTML AND CSS | ==========
 const char index_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html>
 <head>
@@ -184,8 +163,13 @@ if (!!window.EventSource) {
 </body>
 </html>)rawliteral";
 
+// ==========| Setup | ==========
 void setup() {
   Serial.begin(115200);
+  
+  // pin setup
+  pinMode(led_pin, OUTPUT);
+  digitalWrite(led_pin, LOW);
 
   // Set the device as a Station and Soft Access Point simultaneously
   WiFi.mode(WIFI_AP_STA);
@@ -242,9 +226,13 @@ void setup() {
   server.begin();
 }
 
+// ==========| Main Loop | ==========
 void loop() {
-  if ((millis() - lastTime) > timerDelay) {
+  
+  //updates values from the sensor and outputs info to the server and console
+  if ((millis() - lastTime_DATA) > timerDelay) {
     getBME680Readings();
+    
     Serial.printf("Temperature = %.2f ºC \n", temperature);
     Serial.printf("Humidity = %.2f % \n", humidity);
     Serial.printf("Pressure = %.2f hPa \n", pressure);
@@ -263,7 +251,36 @@ void loop() {
     events.send(String(iaq).c_str(),"iaq",millis());
     events.send(String(calibration_text).c_str(),"calibration",millis());
     
-    lastTime = millis();
+    lastTime_DATA = millis();
+  }
+  
+  //flashes the LED based on the sensor data
+  if ((millis() - lastTime_LED) > ledDelay) {
+    digitalWrite(LED_PIN, HIGH);
+  } else {
+    digitalWrite(LED_PIN, LOW);
+  }
+}
+
+// update values from the sensor
+void getBME680Readings(){
+  // Tell BME680 to begin measurement.
+  if (bme.run()) { //if new data is available
+    temperature = bme.temperature;
+    pressure = bme.pressure / 100.0;
+    humidity = bme.humidity;
+    iaq = bme.iaq;
+    calibration_status = bme.iaqAccuracy;
+    UpdateLedFrequency(iaq);
+    
+    if (calibration_status == 3) {
+      calibration_text = "Done";
+    } else {
+      calibration_text = "In Progress...  " + String(calibration_status) + "/3";
+    }
+  } else {
+    Serial.println(F("Failed to begin reading :("));
+    checkIaqSensorStatus();
   }
 }
 
@@ -310,9 +327,10 @@ void errLeds(void) {
   delay(100);
 }
 
-// LED functionalities start here
-// waiting for implementation
-int LED = D0;
+// this is called inside getBME680Readings
+void UpdateLedFrequency(var){
+  ledDelay = map(var, 0, 500, 1, 5);
+}
 
 // blinking slowly
 void ledBlink(void) {
