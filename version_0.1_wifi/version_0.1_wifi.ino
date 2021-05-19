@@ -153,43 +153,22 @@ void errLeds(void) {
 
 // blinking slowly
 void ledBlink(void) {
-  pinMode(LED, OUTPUT);
-  digitalWrite(LED, LOW);
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, LOW);
   delay(2000);
-  digitalWrite(LED, HIGH);
+  digitalWrite(LED_PIN, HIGH);
   delay(2000);
 }
 
 // blinking rapidly
 void ledBlinkRapid(void) {
-  pinMode(LED, OUTPUT);
-  digitalWrite(LED, LOW);
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, LOW);
   delay(100);
-  digitalWrite(LED, HIGH);
+  digitalWrite(LED_PIN, HIGH);
   delay(100);
 }
 
-
-
-String processor(const String& var){
-  getBME680Readings();
-  //Serial.println(var);
-  if(var == "TEMPERATURE"){
-    return String(temperature);
-  }
-  else if(var == "HUMIDITY"){
-    return String(humidity);
-  }
-  else if(var == "PRESSURE"){
-    return String(pressure);
-  }
- else if(var == "IAQ"){
-    return String(iaq);
-  }
- else if(var == "CALIBRATION"){
-    return String(calibration_text);
-  }
-}
 
 // this is called inside getBME680Readings
 void UpdateLedFrequency(int var){
@@ -253,13 +232,33 @@ void getBME680Readings(){
   }
 }
 
+String processor(const String& var){
+  getBME680Readings();
+  //Serial.println(var);
+  if(var == "TEMPERATURE"){
+    return String(temperature);
+  }
+  else if(var == "HUMIDITY"){
+    return String(humidity);
+  }
+  else if(var == "PRESSURE"){
+    return String(pressure);
+  }
+ else if(var == "IAQ"){
+    return String(iaq);
+  }
+ else if(var == "CALIBRATION"){
+    return String(calibration_text);
+  }
+}
+
 // ==========| Setup | ==========
 void setup() {
   Serial.begin(115200);
   
   // pin setup
-  pinMode(led_pin, OUTPUT);
-  digitalWrite(led_pin, LOW);
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, LOW);
 
   // Set the device as a Station and Soft Access Point simultaneously
   WiFi.mode(WIFI_AP_STA);
