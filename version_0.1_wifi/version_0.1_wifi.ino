@@ -20,6 +20,7 @@
 // Helper functions declarations
 void checkIaqSensorStatus(void);
 void errLeds(void);
+void processor(void);
 
 // Replace with your network credentials
 const char ssid[] = WIFI_SSID;
