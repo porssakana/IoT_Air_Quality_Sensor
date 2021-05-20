@@ -20,14 +20,17 @@
 // Helper functions declarations
 void checkIaqSensorStatus(void);
 void errLeds(void);
-void processor(void);
+void ledBlink(void);
+void ledBlinkRapid(void);
+void UpdateLedFrequency(int var);
+
 
 // Replace with your network credentials
 const char ssid[] = WIFI_SSID;
 const char password[] = WIFI_PASSWORD;
 
 // ==========| Pin Declarations | ==========
-const int LED_PIN = 3;
+const int LED_PIN = D3;
 
 // ==========| Objects | ==========
 Bsec bme;
@@ -353,13 +356,3 @@ void ledBlinkRapid(void) {
 void UpdateLedFrequency(int var){
   ledDelay = map(var, 0, 500, 1, 5);
 }
-
-
-
-
-
-
-
-
-
-
